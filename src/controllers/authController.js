@@ -21,7 +21,7 @@ exports.sendOtp = async (req, res, next) => {
     const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     let user = await User.findOne({ phoneNumber: phone });
-    
+
     if (user) {
       user.otpCode = otpCode;
       user.otpExpiresAt = otpExpiresAt;

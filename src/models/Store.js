@@ -9,7 +9,8 @@ const storeSchema = new mongoose.Schema({
     coordinates: { type: [Number], required: true } // [longitude, latitude]
   },
   deliveryTimeEstimate: { type: String },
-  tags: [{ type: String }]
+  tags: [{ type: String }],
+  status: { type: String, enum: ['pending', 'approved', 'rejected', 'suspended'], default: 'pending' }
 }, { timestamps: true });
 
 storeSchema.index({ location: "2dsphere" });

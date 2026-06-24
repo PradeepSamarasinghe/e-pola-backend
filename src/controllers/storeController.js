@@ -47,3 +47,58 @@ exports.updateStore = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.applyForStore = async (req, res, next) => {
+  try {
+    const existingStore = await Store.findOne({ vendorId: req.user.id });
+    if (existingStore) {
+      return res.status(400).json({ success: false, error: "You have already applied for a store", store: existingStore });
+    }
+
+    const { name, location, deliveryTimeEstimate, tags } = req.body;
+    const store = await Store.create({
+      vendorId: req.user.id,
+      name,
+      location,
+      deliveryTimeEstimate,
+      tags,
+      status: 'pending'
+    });
+
+    res.status(201).json({ success: true, store });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getMyStore = async (req, res, next) => {
+  try {
+    const store = await Store.findOne({ vendorId: req.user.id });
+    if (!store) {
+      return res.status(404).json({ success: false, error: "Store not found" });
+    }
+    res.json({ success: true, store });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.approveStore = async (req, res, next) => {
+  try {
+    const store = await Store.findById(req.params.id);
+    if (!store) {
+      return res.status(404).json({ success: false, error: "Store not found" });
+    }
+
+    store.status = 'approved';
+    await store.save();
+
+    // Upgrade the user role to vendor
+    const User = require('../models/User');
+    await User.findByIdAndUpdate(store.vendorId, { role: 'vendor' });
+
+    res.json({ success: true, store, message: "Store approved and user upgraded to vendor" });
+  } catch (error) {
+    next(error);
+  }
+};

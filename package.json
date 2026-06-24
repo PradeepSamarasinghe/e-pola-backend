@@ -23,6 +23,7 @@
     "geolib": "^3.3.14",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.1",
-    "stripe": "^22.2.3"
+    "stripe": "^22.2.3",
+    "twilio": "^6.0.2"
   }
 }
