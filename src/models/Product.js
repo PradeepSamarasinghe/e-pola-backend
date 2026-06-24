@@ -1,12 +1,16 @@
 const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema({
+  storeId: { type: mongoose.Schema.Types.ObjectId, ref: "Store" },
   sku: { type: String, required: false, unique: true, sparse: true },
   name: { type: String, required: true },
   category: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
   price: { type: Number, required: true },
   image: String,
+  image_url: String,
+  images: [{ type: String }],
   description: String,
+  is_quick_pick: { type: Boolean, default: false },
   nutritionalData: {
     activeTime: Number,
     totalTime: Number,
