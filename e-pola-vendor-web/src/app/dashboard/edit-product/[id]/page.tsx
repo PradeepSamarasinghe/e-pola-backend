@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
-export default function AddProductPage() {
+export default function EditProductPage() {
   const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
@@ -29,17 +31,42 @@ export default function AddProductPage() {
         if (res.ok) {
           const data = await res.json();
           setCategories(data);
-          if (data.length > 0) {
-            setCategory(data[0]._id || data[0].id);
-          }
+          
+          // Only fetch product if categories loaded, or do it in parallel
+          fetchProduct(data);
         }
       } catch (err) {
         console.error("Failed to fetch categories", err);
       }
     };
 
+    const fetchProduct = async (loadedCategories: any[]) => {
+      if (!id) return;
+      try {
+        const res = await fetch(`/api/v1/products/${id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setName(data.name);
+          setPrice(data.price.toString());
+          setDescription(data.description || "");
+          
+          // Extract category ID whether populated or not
+          const catId = data.category && typeof data.category === 'object' ? data.category._id : data.category;
+          
+          if (catId) {
+            setCategory(catId);
+          } else if (loadedCategories.length > 0) {
+            setCategory(loadedCategories[0]._id || loadedCategories[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch product", err);
+        setError("Failed to load product details");
+      }
+    };
+
     fetchCategories();
-  }, []);
+  }, [id, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,21 +103,25 @@ export default function AddProductPage() {
       }
 
       // 2. Submit to backend
-      const res = await fetch("/api/v1/products", {
-        method: "POST",
+      const payload: any = {
+        name,
+        price: Number(price),
+        description,
+        category,
+      };
+
+      if (uploadedUrls.length > 0) {
+        payload.image_url = uploadedUrls[0];
+        payload.images = uploadedUrls; // This will overwrite existing images. To append, we would need the old images first.
+      }
+
+      const res = await fetch(`/api/v1/products/${id}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          name,
-          price: Number(price),
-          description,
-          category,
-          image_url: uploadedUrls[0] || "",
-          images: uploadedUrls,
-          is_quick_pick: true, // Auto-add to quick picks for demo
-        }),
+        body: JSON.stringify(payload),
       });
 
       const result = await res.json();
@@ -111,7 +142,7 @@ export default function AddProductPage() {
     <div className="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Add New Product</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Edit Product</h1>
           <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 font-medium">
             Cancel
           </Link>
@@ -213,9 +244,9 @@ export default function AddProductPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
               >
-                {loading ? "Saving Product..." : "Save Product"}
+                {loading ? "Updating Product..." : "Update Product"}
               </button>
             </div>
           </form>

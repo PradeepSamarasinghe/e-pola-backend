@@ -29,7 +29,7 @@ export default function DashboardPage() {
 
   const fetchProducts = async (token: string) => {
     try {
-      const res = await fetch("http://localhost:5000/api/v1/products/vendor", {
+      const res = await fetch("/api/v1/products/vendor", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -45,6 +45,28 @@ export default function DashboardPage() {
       console.error("Failed to fetch products:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
+    
+    const token = localStorage.getItem("vendorToken");
+    try {
+      const res = await fetch(`/api/v1/products/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        setProducts(products.filter(p => p._id !== id));
+      } else {
+        alert("Failed to delete product");
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("Error deleting product");
     }
   };
 
@@ -101,15 +123,31 @@ export default function DashboardPage() {
             <div className="bg-white shadow-sm rounded-lg overflow-hidden">
               <ul className="divide-y divide-gray-200">
                 {products.map((product) => (
-                  <li key={product._id} className="p-4 flex items-center">
-                    <img
-                      src={product.image_url || product.image || "https://via.placeholder.com/150"}
-                      alt={product.name}
-                      className="h-16 w-16 rounded-md object-cover mr-4"
-                    />
-                    <div className="flex-1">
-                      <h3 className="text-lg font-medium text-gray-900">{product.name}</h3>
-                      <p className="text-gray-500">LKR {product.price}</p>
+                  <li key={product._id} className="p-4 flex items-center justify-between">
+                    <div className="flex items-center flex-1">
+                      <img
+                        src={product.image_url || product.image || "https://via.placeholder.com/150"}
+                        alt={product.name}
+                        className="h-16 w-16 rounded-md object-cover mr-4"
+                      />
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900">{product.name}</h3>
+                        <p className="text-gray-500">LKR {product.price}</p>
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Link
+                        href={`/dashboard/edit-product/${product._id}`}
+                        className="bg-blue-50 text-blue-600 px-3 py-1 rounded-md text-sm font-medium hover:bg-blue-100"
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(product._id)}
+                        className="bg-red-50 text-red-600 px-3 py-1 rounded-md text-sm font-medium hover:bg-red-100"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </li>
                 ))}
