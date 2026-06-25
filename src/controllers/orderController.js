@@ -14,6 +14,7 @@ exports.createOrder = async (req, res, next) => {
     }
 
     const orderItems = [];
+    let orderStoreId = null;
 
     for (const item of items) {
       const product = await Product.findById(item.product_id);
@@ -24,6 +25,13 @@ exports.createOrder = async (req, res, next) => {
 
       if (product.stockQuantity < item.quantity) {
         return res.status(400).json({ success: false, error: `Insufficient stock for ${product.name}` });
+      }
+
+      // Enforce single store checkout
+      if (!orderStoreId) {
+        orderStoreId = product.storeId;
+      } else if (orderStoreId.toString() !== product.storeId.toString()) {
+        return res.status(400).json({ success: false, error: "All items in a single order must belong to the same store" });
       }
 
       product.stockQuantity -= item.quantity;
@@ -39,6 +47,7 @@ exports.createOrder = async (req, res, next) => {
 
     const order = await Order.create({
       userId: req.user.id,
+      storeId: orderStoreId,
       items: orderItems,
       totalValue: total,
       paymentType: payment_method,
@@ -166,6 +175,56 @@ exports.getOrderById = async (req, res, next) => {
     if (order.userId.toString() !== req.user.id) {
       return res.status(403).json({ success: false, error: "Not authorized to view this order" });
     }
+    res.json(order);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getVendorOrders = async (req, res, next) => {
+  try {
+    const store = await Store.findOne({ vendorId: req.user.id });
+    if (!store) {
+      return res.status(404).json({ success: false, error: "Store not found for this vendor" });
+    }
+
+    const orders = await Order.find({ storeId: store._id })
+      .populate('userId', 'name phoneNumber')
+      .populate('items.productId', 'name image_url')
+      .sort({ createdAt: -1 });
+      
+    res.json(orders);
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateOrderStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    const store = await Store.findOne({ vendorId: req.user.id });
+    if (!store) {
+      return res.status(404).json({ success: false, error: "Store not found for this vendor" });
+    }
+
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, error: "Order not found" });
+    }
+
+    if (order.storeId.toString() !== store._id.toString()) {
+      return res.status(403).json({ success: false, error: "Not authorized to update this order" });
+    }
+
+    order.fulfillmentStatus = status;
+    await order.save();
+
+    // Notify customer
+    const user = await User.findById(order.userId);
+    if (user) {
+      await sendOrderStatusNotification(user, order);
+    }
+
     res.json(order);
   } catch (error) {
     next(error);

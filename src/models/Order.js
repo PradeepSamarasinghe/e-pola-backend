@@ -9,6 +9,7 @@ const orderItemSchema = new mongoose.Schema({
 
 const orderSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  storeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Store', required: true },
   items: [orderItemSchema],
   totalValue: { type: Number, required: true },
   paymentType: { type: String, enum: ['cash_on_delivery', 'card'], default: 'cash_on_delivery' },

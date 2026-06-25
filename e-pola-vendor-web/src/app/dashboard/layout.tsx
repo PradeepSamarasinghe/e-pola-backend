@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     const checkStore = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/v1/stores/me", {
+        const res = await fetch("/api/v1/stores/me", {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -80,5 +81,59 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  return <>{children}</>;
+  const handleLogout = () => {
+    localStorage.removeItem("vendorToken");
+    router.push("/login");
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <h1 className="text-xl font-bold text-green-700 mr-8">E-pola Vendor</h1>
+              <div className="flex space-x-4">
+                <Link
+                  href="/dashboard"
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${
+                    pathname === "/dashboard" ? "bg-green-50 text-green-700" : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/dashboard/products"
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${
+                    pathname === "/dashboard/products" ? "bg-green-50 text-green-700" : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  Products
+                </Link>
+                <Link
+                  href="/dashboard/orders"
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${
+                    pathname === "/dashboard/orders" ? "bg-green-50 text-green-700" : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  Orders
+                </Link>
+              </div>
+            </div>
+            <div className="flex items-center">
+              <button
+                onClick={handleLogout}
+                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <main>
+        {children}
+      </main>
+    </div>
+  );
 }

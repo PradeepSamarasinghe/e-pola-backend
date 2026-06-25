@@ -96,7 +96,7 @@ export default function AddProductPage() {
       const result = await res.json();
 
       if (res.ok) {
-        router.push("/dashboard");
+        router.push("/dashboard/products");
       } else {
         throw new Error(result.message || result.error || "Failed to create product");
       }
@@ -112,7 +112,7 @@ export default function AddProductPage() {
       <div className="max-w-2xl mx-auto">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Add New Product</h1>
-          <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 font-medium">
+          <Link href="/dashboard/products" className="text-gray-600 hover:text-gray-900 font-medium">
             Cancel
           </Link>
         </div>
